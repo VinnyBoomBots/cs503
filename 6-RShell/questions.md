@@ -1,0 +1,19 @@
+1. How does the remote client determine when a command's output is fully received from the server, and what techniques can be used to handle partial reads or ensure complete message transmission?
+
+For the implemenation of our remote shell this week, the client is "aware" that the server's output is fully received when the end-of-file constant (RDSH_EOF_CHAR = 0x04) is received. This is accomplished by calling the send_message_eof() function in the send_message_string function, which is sent (ideally) in every instant that server output is sent to the client. To ensure that ALL of the output is received -- as streams of data can be sent in chunks, as the readme.md enlightened me of this week -- the recv() function, which takes in the server output, runs in a loop that continues until data intake ceases, or the until a zero is returned by the function. This -- ideally -- ensures that all server-side output is received by the client. 
+
+2. This week's lecture on TCP explains that it is a reliable stream protocol rather than a message-oriented one. Since TCP does not preserve message boundaries, how should a networked shell protocol define and detect the beginning and end of a command sent over a TCP connection? What challenges arise if this is not handled correctly?
+
+As described in the answer to question one above, TCP streams require functionality that first, identifies unique end-of-stream characters, and second, ceases stream intake when that character is identified. This is required on both the client and the server side -- and the reason is is because if this functionality is not present, then source code dealing with TCP streams will just continue to wait in vein for data that isn't coming, thus stalling a program in a waiting-for-nothing kind of stasis. Sounds like a bummer, honestly -- so appending EOFs to streams is quite important. 
+
+3. Describe the general differences between stateful and stateless protocols.
+
+Simplistically, it seems as if stateless protocols are unidirectional, while stateful protocols are bidirectional (you can both send AND receive on them). Additionally (and likely because of their unidirectional nature), stateless protocols will be "faster with less overhead" (this is taken from the lecture slides), but they are also "not fully reliable." Stateful protocols are, by contrast, "more robust and reliable," but they are also "slower" and have "more overhead" issues to deal with. 
+
+4. Our lecture this week stated that UDP is "unreliable". If that is the case, why would we ever use it?
+
+The simple answer: Because it's easier! And there are certainly instances where the message-based nature of UDP could be beneficial. I'm thinking of an instance where millions of messages need to be sent in a given day -- and keeping with the mail-delivery metaphor, perhaps like a UPS or USPS logistics situation -- and quite honestly, "losing" a message here and there is likely a manageable cost of doing business when so many of these messages need to be received and processed in such a short amount of time. Speed and efficiency would outweigh reliability in this sense (or at least that's my guess) -- and the structured, packaged nature of UDP seems like it may be the way to go in such an instance. 
+
+5. What interface/abstraction is provided by the operating system to enable applications to use network communications?
+
+In typical Linux fashion (or at least as I've come to understand Linux), network communications utilize files and file descriptors as their interfaces/abstractions -- because everything in Linux, even your keyboard, is a file. (This is a very powerful and easy-to-use abstraction, Linux -- thank you, thank you.) And so when I was building the functionality for this remote-shell assignment, it made things much easier for me that we were dealing with file descriptors -- as I've built up a solid understanding and familiarity with FDs over the past few weeks. 
